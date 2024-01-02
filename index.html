@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #road {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #808080;
+      z-index: 0;
+    }
+
+    .lane-marker {
+      position: absolute;
+      width: 2px;
+      height: 100vh;
+      /* background-color: #fff;
+       */
+       border: 1px solid white;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .car {
+      position: absolute;
+      width: 50px;
+      height: 80px;
+      background-color: #00ff00; /* Green color for other cars */
+      z-index: 1;
+      left: 50%;
+    }
+
+    .obstacle {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background-color: #ff0000; /* Red color for obstacles */
+      z-index: 2;
+    }
+
+    #main-car {
+      position: absolute;
+      bottom: 10%;
+      left: 40%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 80px;
+      background-color: #ff0000;
+      z-index: 3; /* Increased z-index for the main car */
+    }
+
+    #distance {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font-size: 20px;
+    }
+
+    #traffic-light {
+      position: absolute;
+      top: 30px;
+      right: 10px;
+      width: 20px;
+      height: 60px;
+      background-color: #000;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 5px;
+    }
+
+    .light {
+      width: 100%;
+      height: 20px;
+      border-radius: 5px;
+    }
+
+    .red {
+      background-color: #ff0000;
+    }
+
+    .yellow {
+      background-color: #ffff00;
+    }
+
+    .flashing-yellow {
+      background-color: #ffff00;
+      animation: flash 1s infinite;
+    }
+
+    .green {
+      background-color: #00ff00;
+    }
+
+    @keyframes flash {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .label-traffic {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="road">
+    <div class="lane-marker" style="left: 25%;"></div>
+    <div class="lane-marker" style="left: 50%;"></div>
+    <div class="lane-marker" style="left: 75%;"></div>
+  </div>
+  
+  <div id="main-car"></div>
+
+  <!-- Additional cars in the same direction -->
+  <div class="car" style="bottom: 30%; left: 30%;" data-speed="3">
+    <img/>
+  </div>
+  <div class="car" style="bottom: 60%; left: 30%;" data-speed="4"></div>
+  <div class="car" style="bottom: 80%; left: 75%;" data-speed="2"></div>
+
+  <!-- Additional cars in the opposite direction -->
+  <div class="car" style="bottom: 20%; left: 55%; transform: scaleX(-1);" data-speed="3"></div>
+  <div class="car" style="bottom: 50%; left: 60%; transform: scaleX(-1);" data-speed="4"></div>
+  <div class="car" style="bottom: 70%; left: 75%; transform: scaleX(-1);" data-speed="2"></div>
+
+  <div id="distance">Distance: 0 mph</div>
+
+  <span class="label-traffic">Traffic calming</span>
+
+  <div id="traffic-light">
+    <div class="light red"></div>
+    <div class="light flashing-yellow"></div>
+    <div class="light green"></div>
+  </div>
+
+
+  <script>
+    const mainCar = document.getElementById('main-car');
+    let mainCarPositionY = 50;
+    let mainCarSpeedY = 1;
+    let distanceTraveled = 0;
+    let trafficLightState = 'red'; // Initial state
+
+    function moveMainCar() {
+      if (trafficLightState === 'green') {
+        mainCarPositionY += mainCarSpeedY;
+
+        // // Change direction when reaching the top or bottom
+        // if (mainCarPositionY >= 80 || mainCarPositionY <= 20) {
+        //   mainCarSpeedY *= -1;
+        // }
+
+        // mainCar.style.bottom = mainCarPositionY + '%';
+      distanceTraveled += Math.abs(mainCarSpeedY); // Increment distance
+
+      document.getElementById('distance').innerText = `Distance: ${distanceTraveled.toFixed(2)} pixels`;
+
+      }
+
+     
+      // Check for obstacles and handle collisions
+    //   checkObstacles();
+
+      setTimeout(moveMainCar, 16); // 60 frames per second
+    }
+
+    function moveOtherCars() {
+      if (trafficLightState === 'green') {
+        const otherCars = document.querySelectorAll('.car');
+
+        otherCars.forEach(car => {
+          let carPositionY = parseFloat(car.style.bottom) || 0;
+          let carSpeed = parseFloat(car.dataset.speed) || 3; // Default speed is 3
+
+          carPositionY += carSpeed;
+
+          // Reset position when reaching the bottom
+          if (carPositionY >= 100) {
+            carPositionY = -20;
+          }
+
+          car.style.bottom = carPositionY + '%';
+        });
+      }
+
+      setTimeout(moveOtherCars, 16); // 60 frames per second
+    }
+
+    function updateRoad() {
+      const road = document.getElementById('road');
+      let roadPosition = 0;
+
+    //   function changeColor() {
+    //     const randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+    //     road.style.backgroundColor = randomColor;
+    //   }
+
+      function update() {
+        roadPosition += 5;
+        road.style.backgroundPositionY = roadPosition + 'px';
+        // changeColor(); // Call the color change function
+
+        // Add obstacles at specific distances
+        if (distanceTraveled >= 200 && distanceTraveled <= 300) {
+          createObstacle(75, roadPosition);
+        }
+        if (distanceTraveled >= 400 && distanceTraveled <= 500) {
+          createObstacle(50, roadPosition);
+        }
+
+        setTimeout(update, 16); // 60 frames per second
+      }
+
+      update();
+    }
+
+    function createObstacle(bottomPercentage, roadPosition) {
+      const obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      obstacle.style.bottom = bottomPercentage + '%';
+      obstacle.style.left = '50%';
+      obstacle.style.transform = `translateX(-50%) translateZ(${roadPosition}px)`; // Move obstacle with the road
+      document.getElementById('road').appendChild(obstacle);
+    }
+
+    function checkObstacles() {
+      if (trafficLightState === 'green') {
+        const obstacles = document.querySelectorAll('.obstacle');
+
+        obstacles.forEach(obstacle => {
+          const obstaclePositionY = parseFloat(obstacle.style.bottom) || 0;
+          const obstaclePositionZ = parseFloat(obstacle.style.transform.split('translateZ(')[1].split('px)')[0]) || 0;
+          const obstacleHeight = parseFloat(obstacle.style.height) || 0;
+
+          if (
+            mainCarPositionY <= obstaclePositionY &&
+            mainCarPositionY + 80 >= obstaclePositionY &&
+            obstaclePositionZ >= -10 && // Tolerance for collision check
+            obstaclePositionZ <= 10
+          ) {
+            // Collision with obstacle
+            alert('Game Over!'); // You can implement your game-over logic here
+            location.reload(); // Reload the page for simplicity
+          }
+        });
+      }
+    }
+
+    // Traffic light control
+    function updateTrafficLight() {
+      setInterval(() => {
+        switch (trafficLightState) {
+          case 'red':
+            trafficLightState = 'green';
+            break;
+          case 'green':
+            trafficLightState = 'flashing-yellow';
+            break;
+          case 'flashing-yellow':
+            trafficLightState = 'red';
+            break;
+        }
+
+        updateTrafficLightDisplay();
+      }, 5000); // Change traffic light every 5 seconds
+    }
+
+    function updateTrafficLightDisplay() {
+      const lights = document.querySelectorAll('.light');
+
+      lights.forEach(light => {
+        light.classList.remove('red', 'yellow', 'flashing-yellow', 'green');
+        light.classList.add(trafficLightState);
+      });
+    }
+
+    moveMainCar();
+    moveOtherCars();
+    updateRoad();
+    updateTrafficLight();
+  </script>
+</body>
+</html>
